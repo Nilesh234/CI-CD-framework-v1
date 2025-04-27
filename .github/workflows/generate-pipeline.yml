@@ -42,7 +42,7 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          git add -f .github/workflows/generated-pipeline.yml
+          git add -f generated_pipelines/*.yml
           git diff --cached --quiet && echo "No changes to commit" || (
             git commit -m "Generated pipeline from blueprint"
             git push origin main
