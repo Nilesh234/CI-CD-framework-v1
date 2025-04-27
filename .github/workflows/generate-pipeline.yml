@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write  # allow workflow to push code
+  contents: write  # allow workflow to push code changes
 
 jobs:
   generate-and-push:
@@ -18,8 +18,8 @@ jobs:
 
       - name: Set up Git User
         run: |
-          git config user.name "your-github-username"
-          git config user.email "your-email@example.com"
+          git config user.name "Nilesh234"
+          git config user.email "ng.magare@tcs.com"
 
       - name: Generate Pipeline File
         run: |
@@ -41,6 +41,5 @@ jobs:
           git add -f .github/workflows/generated-pipeline.yml
           git diff --cached --quiet && echo "No changes to commit" || (
             git commit -m "Generated pipeline from blueprint"
-            git remote set-url origin https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }}
-            git push origin main
+            git push https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }} main
           )
