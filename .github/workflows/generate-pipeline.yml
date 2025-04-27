@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'  # Ignore changes to workflows
-      - 'generated_pipelines/**'  # Ignore generated pipeline files
 
 permissions:
   contents: write
@@ -19,13 +16,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      - name: Set up Git User
-        run: |
-          git config user.name "Nilesh234"
-          git config user.email "ng.magare@tcs.com"
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate Pipeline File using Python script
+      - name: Generate Pipeline File from Blueprint or Template
         run: |
           python scripts/generate_pipeline.py
 
@@ -45,16 +35,7 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Check if any generated pipeline files exist in the generated_pipelines folder
-          GENERATED_PIPELINES=$(find generated_pipelines -type f -name "*.yml")
-          
-          if [ -n "$GENERATED_PIPELINES" ]; then
-            # Add all generated pipeline files to git
-            git add generated_pipelines/*.yml
-            git diff --cached --quiet && echo "No changes to commit" || (
-              git commit -m "Generated pipeline from blueprint"
-              git push origin main
-            )
-          else
-            echo "No generated pipeline files found, skipping commit."
-          fi
+          git config user.name "Nilesh234"
+          git config user.email "ng.magare@tcs.com"
+          git add generated_pipelines/
+          git diff --cached --quiet || (git commit -m "Generated pipeline from blueprint or template" && git push origin main)
