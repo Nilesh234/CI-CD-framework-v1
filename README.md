@@ -10,6 +10,7 @@ Auto-generates GitHub Actions workflows from YAML/JSON blueprints.
 - `scripts/generate_pipeline.py`: Script to read blueprint and generate pipeline.
 - `requirements.txt`: Python dependencies.
 - `.gitignore`: Ignore rules.
+- `generated_pipeline/` : output file
 
 ## Usage
 
