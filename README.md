@@ -1,6 +1,6 @@
 # Dynamic CI/CD Framework
 
-Auto-generates GitHub Actions workflows from YAML/JSON blueprints.
+Auto-generates GitHub Actions workflows from YAML/JSON blueprints or shared Templates
 
 ## Structure
 
@@ -16,10 +16,4 @@ Auto-generates GitHub Actions workflows from YAML/JSON blueprints.
 
 1. Place your blueprint in `blueprint/`.
 2. Push to GitHub.
-3. The CI workflow will generate `.github/workflows/generated-pipeline.yml`.
-
-Supports:
-- Python, Java, C++
-- Pip, Maven, CMake
-- CDK, CloudFormation, SAM
-- Semantic versioning & branching
+3. The CI workflow will generate `generated_pipeline/generated-pipeline_yyyy-mm-dd_hh-mm-ss`.
