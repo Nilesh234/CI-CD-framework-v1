@@ -1,47 +1,72 @@
+import os
 import yaml
 import json
-import os
-import shutil
+from datetime import datetime
 
-# Constants
-BLUEPRINT_YAML = "blueprint/pipeline-blueprint.yaml"
-BLUEPRINT_JSON = "blueprint/pipeline-blueprint.json"
-OUTPUT_PIPELINE_FILE = ".github/workflows/generated-pipeline.yml"
-TEMPLATE_FOLDER = "templates/"
+# Paths
+BLUEPRINT_DIR = 'blueprint'
+TEMPLATES_DIR = 'templates'
+OUTPUT_FOLDER = 'generated_pipelines'
 
+# Load blueprint (yaml or json)
 def load_blueprint():
-    if os.path.exists(BLUEPRINT_YAML):
-        with open(BLUEPRINT_YAML, "r") as file:
-            return yaml.safe_load(file)
-    elif os.path.exists(BLUEPRINT_JSON):
-        with open(BLUEPRINT_JSON, "r") as file:
-            return json.load(file)
+    yaml_path = os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.yaml')
+    json_path = os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.json')
+    
+    if os.path.exists(yaml_path):
+        with open(yaml_path, 'r') as f:
+            return yaml.safe_load(f)
+    elif os.path.exists(json_path):
+        with open(json_path, 'r') as f:
+            return json.load(f)
     else:
-        raise Exception("No blueprint file found!")
+        raise FileNotFoundError('No blueprint file found!')
 
-def copy_template(technology):
-    template_path = os.path.join(TEMPLATE_FOLDER, f"{technology}-template.yml")
+# Load template
+def load_template(language):
+    template_file = f'{language.lower()}-template.yml'
+    template_path = os.path.join(TEMPLATES_DIR, template_file)
     if not os.path.exists(template_path):
-        raise Exception(f"No template found for technology: {technology}")
-    shutil.copy(template_path, OUTPUT_PIPELINE_FILE)
+        raise FileNotFoundError(f'Template for {language} not found at {template_path}')
+    
+    with open(template_path, 'r') as f:
+        return f.read()
 
-def customize_pipeline(blueprint):
-    with open(OUTPUT_PIPELINE_FILE, "r") as file:
-        content = file.read()
-    customized = content.replace("PROJECT_NAME", blueprint.get("project_name", "project"))
-    branches = blueprint.get("branching", {}).get("allowed_branches", [])
-    branch_placeholder = "\n      - " + "\n      - ".join(branches)
-    customized = customized.replace("BRANCHES_PLACEHOLDER", branch_placeholder)
-    deploy_method = blueprint.get("deployment_target", {}).get("deployment_method", "terraform")
-    customized = customized.replace("DEPLOY_METHOD", deploy_method)
-    with open(OUTPUT_PIPELINE_FILE, "w") as file:
-        file.write(customized)
+# Replace placeholders
+def fill_template(template_content, blueprint):
+    replacements = {
+        'PROJECT_NAME': blueprint.get('project_name', 'MyProject'),
+        'BRANCHES_PLACEHOLDER': str(blueprint.get('branches', ['main'])),
+        'DEPLOY_METHOD': blueprint.get('deploy_method', 'sam')
+    }
+    
+    for placeholder, value in replacements.items():
+        if isinstance(value, list):
+            # YAML expects a list like ["main", "dev"]
+            value = str(value).replace("'", '"')
+        template_content = template_content.replace(placeholder, str(value))
+    
+    return template_content
 
+# Save final pipeline with timestamp
+def save_pipeline(content):
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{timestamp}.yml"
+    output_path = os.path.join(OUTPUT_FOLDER, filename)
+    
+    with open(output_path, 'w') as f:
+        f.write(content)
+    
+    print(f"Pipeline generated successfully at {output_path}")
+
+# Main flow
 def main():
     blueprint = load_blueprint()
-    copy_template(blueprint["technology"])
-    customize_pipeline(blueprint)
-    print("Pipeline generated successfully from blueprint.")
+    language = blueprint.get('language', 'python')  # default to python
+    template_content = load_template(language)
+    filled_content = fill_template(template_content, blueprint)
+    save_pipeline(filled_content)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
