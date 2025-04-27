@@ -6,34 +6,41 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: write  # allow workflow to push code
 
 jobs:
   generate-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Git
+      - name: Set up Git User
         run: |
-          git config user.name "Nilesh234"
-          git config user.email "ng.magare@tcs.com"
+          git config user.name "your-github-username"
+          git config user.email "your-email@example.com"
 
-      - name: Generate pipeline
+      - name: Generate Pipeline File
         run: |
-          # your pipeline generation script here
           echo "Generating pipeline..."
-          # For example, touch a dummy file:
           mkdir -p .github/workflows
-          echo "name: Dummy Workflow" > .github/workflows/generated-pipeline.yml
+          echo "
+          name: Generated Pipeline
+          on: [push]
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - run: echo Hello, world!" > .github/workflows/generated-pipeline.yml
 
-      - name: Commit and push workflow file
+      - name: Commit and Push Changes if Needed
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           git add -f .github/workflows/generated-pipeline.yml
-          git commit -m "Generated pipeline from blueprint" || echo "No changes to commit"
-          git remote set-url origin https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }}
-          git push
+          git diff --cached --quiet && echo "No changes to commit" || (
+            git commit -m "Generated pipeline from blueprint"
+            git remote set-url origin https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }}
+            git push origin main
+          )
