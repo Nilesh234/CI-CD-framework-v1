@@ -1,0 +1,47 @@
+name: MyProject - Python CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+- develop
+- release/*
+- hotfix/*
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+    - name: Lint Code
+      run: flake8 .
+
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run Unit Tests
+      run: pytest --cov
+
+  package_artifact:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Package Artifact
+      run: python setup.py sdist
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy using sam
+      run: |
+        if [[ "sam" == "sam" ]]; then
+          sam build && sam deploy --no-confirm-changeset
+        elif [[ "sam" == "cdk" ]]; then
+          cdk deploy --require-approval never
+        elif [[ "sam" == "cloudformation" ]]; then
+          aws cloudformation deploy --template-file template.yaml --stack-name my-stack
+        fi
