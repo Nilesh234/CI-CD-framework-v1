@@ -1,45 +1,40 @@
-name: Generate Dynamic CI/CD Pipeline
-
-permissions:
-  contents: write  # 🛡️ Allow GitHub Actions bot to push commits
+name: Generate and Push Pipeline
 
 on:
   push:
-    paths:
-      - 'blueprint/**'
-      - 'scripts/**'
-      - 'templates/**'
-  workflow_dispatch:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  workflows: write
 
 jobs:
-  generate:
+  generate-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11  # ✅ Modern Python version
+      - name: Set up Git
+        run: |
+          git config user.name "Nilesh234"
+          git config user.email "ng.magare@tcs.com"
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - name: Generate pipeline
+        run: |
+          # your pipeline generation script here
+          echo "Generating pipeline..."
+          # For example, touch a dummy file:
+          mkdir -p .github/workflows
+          echo "name: Dummy Workflow" > .github/workflows/generated-pipeline.yml
 
-    - name: Generate Pipeline
-      run: |
-        python scripts/generate_pipeline.py
-
-    - name: Configure Git for pushing
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-
-    - name: Commit and Push generated pipeline
-      run: |
-        git add -f .github/workflows/generated-pipeline.yml
-        git commit -m "Generated pipeline from blueprint" || echo "No changes to commit"
-        git push
+      - name: Commit and push workflow file
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git add -f .github/workflows/generated-pipeline.yml
+          git commit -m "Generated pipeline from blueprint" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }}
+          git push
