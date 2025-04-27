@@ -12,7 +12,7 @@ OUTPUT_FOLDER = 'generated_pipelines'
 def load_blueprint():
     yaml_path = os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.yaml')
     json_path = os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.json')
-    
+
     if os.path.exists(yaml_path):
         with open(yaml_path, 'r') as f:
             return yaml.safe_load(f)
@@ -20,7 +20,7 @@ def load_blueprint():
         with open(json_path, 'r') as f:
             return json.load(f)
     else:
-        raise FileNotFoundError('No blueprint file found!')
+        return None  # No blueprint found
 
 # Load template for a given technology
 def load_template(technology):
@@ -36,16 +36,16 @@ def load_template(technology):
 def fill_template(template_content, blueprint):
     replacements = {
         'PROJECT_NAME': blueprint.get('project_name', 'MyProject'),
-        'BRANCHES_PLACEHOLDER': str(blueprint.get('branching', {}).get('allowed_branches', ['main'])),
+        'BRANCHES_PLACEHOLDER': yaml.dump(blueprint.get('branching', {}).get('allowed_branches', ['main'])).strip() if blueprint else '["main"]',
         'DEPLOY_METHOD': blueprint.get('deployment_target', {}).get('deployment_method', 'sam'),
         'BUILD_TYPE': blueprint.get('build_type', 'full'),
-        'LINT_STAGE': str(blueprint.get('stages', {}).get('lint', False)),
-        'STATIC_ANALYSIS_STAGE': str(blueprint.get('stages', {}).get('static_analysis', False)),
-        'UNIT_TESTS_STAGE': str(blueprint.get('stages', {}).get('unit_tests', False)),
-        'INTEGRATION_TESTS_STAGE': str(blueprint.get('stages', {}).get('integration_tests', False)),
-        'SECURITY_SCAN_STAGE': str(blueprint.get('stages', {}).get('security_scan', False)),
-        'PACKAGE_ARTIFACT_STAGE': str(blueprint.get('stages', {}).get('package_artifact', False)),
-        'DEPLOY_STAGE': str(blueprint.get('stages', {}).get('deploy', False)),
+        'LINT_STAGE': str(blueprint.get('stages', {}).get('lint', False)).lower(),
+        'STATIC_ANALYSIS_STAGE': str(blueprint.get('stages', {}).get('static_analysis', False)).lower(),
+        'UNIT_TESTS_STAGE': str(blueprint.get('stages', {}).get('unit_tests', False)).lower(),
+        'INTEGRATION_TESTS_STAGE': str(blueprint.get('stages', {}).get('integration_tests', False)).lower(),
+        'SECURITY_SCAN_STAGE': str(blueprint.get('stages', {}).get('security_scan', False)).lower(),
+        'PACKAGE_ARTIFACT_STAGE': str(blueprint.get('stages', {}).get('package_artifact', False)).lower(),
+        'DEPLOY_STAGE': str(blueprint.get('stages', {}).get('deploy', False)).lower(),
         'CLOUD_PROVIDER': blueprint.get('deployment_target', {}).get('cloud_provider', 'aws'),
         'REGION': blueprint.get('deployment_target', {}).get('region', 'us-east-1'),
         'SERVICE': blueprint.get('deployment_target', {}).get('service', 'lambda'),
@@ -53,45 +53,36 @@ def fill_template(template_content, blueprint):
     }
     
     for placeholder, value in replacements.items():
-        if isinstance(value, list):
-            # YAML expects a list like ["main", "dev"]
-            value = str(value).replace("'", '"')
         template_content = template_content.replace(placeholder, str(value))
-    
+
     return template_content
 
 # Save the final pipeline with a timestamp in a separate folder
 def save_pipeline(content):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"generated-pipeline_{timestamp}.yml"  # Filename with timestamp
+    filename = f"generated-pipeline_{timestamp}.yml"
     output_path = os.path.join(OUTPUT_FOLDER, filename)
     
     with open(output_path, 'w') as f:
         f.write(content)
     
-    print(f"Pipeline generated successfully at {output_path}")
+    print(f"✅ Pipeline generated successfully at: {output_path}")
 
 # Main flow
 def main():
-    # Check if blueprint exists
-    blueprint_exists = os.path.exists(os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.json')) or os.path.exists(os.path.join(BLUEPRINT_DIR, 'pipeline-blueprint.yaml'))
-    
-    if blueprint_exists:
-        print("Generating pipeline from blueprint...")
-        blueprint = load_blueprint()
-        technology = blueprint.get('technology', 'python')  # default to python
-        template_content = load_template(technology)
-        filled_content = fill_template(template_content, blueprint)
-        save_pipeline(filled_content)
-    
+    blueprint = load_blueprint()
+
+    if blueprint:
+        print("✅ Blueprint detected: Generating pipeline from blueprint...")
+        technology = blueprint.get('technology', 'python')  # default to python if missing
     else:
-        # If no blueprint, fall back to generating from template
-        print("Generating pipeline from template...")
-        template_name = 'python'  # Default template if no blueprint, you can modify based on your needs.
-        template_content = load_template(template_name)
-        filled_content = fill_template(template_content, {})
-        save_pipeline(filled_content)
+        print("⚠️ No blueprint found: Generating pipeline from default template...")
+        technology = 'python'  # fallback template
+
+    template_content = load_template(technology)
+    filled_content = fill_template(template_content, blueprint or {})
+    save_pipeline(filled_content)
 
 if __name__ == '__main__':
     main()
