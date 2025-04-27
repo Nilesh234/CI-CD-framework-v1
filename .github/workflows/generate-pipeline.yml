@@ -35,7 +35,7 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          git config user.name "Nilesh234"
-          git config user.email "ng.magare@tcs.com"
+#          git config user.name "Nilesh234"
+#          git config user.email "ng.magare@tcs.com"
           git add generated_pipelines/
           git diff --cached --quiet || (git commit -m "Generated pipeline from blueprint or template" && git push origin main)
