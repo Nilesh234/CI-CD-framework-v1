@@ -32,12 +32,31 @@ def load_template(technology):
     with open(template_path, 'r') as f:
         return f.read()
 
+# Dynamic deploy commands based on deployment method
+def get_deploy_commands(deployment_method):
+    deployment_method = (deployment_method or 'sam').lower()
+    if deployment_method == 'sam':
+        return "sam build && sam deploy --no-confirm-changeset"
+    elif deployment_method == 'terraform':
+        return "terraform init && terraform apply -auto-approve"
+    elif deployment_method == 'docker':
+        return "docker build -t myapp . && docker push myapp"
+    elif deployment_method == 'cdk':
+        return "cdk deploy --require-approval never"
+    elif deployment_method == 'cloudformation':
+        return "aws cloudformation deploy --template-file template.yaml --stack-name my-stack"
+    else:
+        return f"echo 'Unsupported deployment method: {deployment_method}'"
+
 # Replace placeholders in the template with values from the blueprint
 def fill_template(template_content, blueprint):
+    deployment_method = blueprint.get('deployment_target', {}).get('deployment_method', 'sam') if blueprint else 'sam'
+    deploy_commands = get_deploy_commands(deployment_method)
+    
     replacements = {
         'PROJECT_NAME': blueprint.get('project_name', 'MyProject'),
         'BRANCHES_PLACEHOLDER': yaml.dump(blueprint.get('branching', {}).get('allowed_branches', ['main'])).strip() if blueprint else '["main"]',
-        'DEPLOY_METHOD': blueprint.get('deployment_target', {}).get('deployment_method', 'sam'),
+        'DEPLOY_COMMANDS': deploy_commands,
         'BUILD_TYPE': blueprint.get('build_type', 'full'),
         'LINT_STAGE': str(blueprint.get('stages', {}).get('lint', False)).lower(),
         'STATIC_ANALYSIS_STAGE': str(blueprint.get('stages', {}).get('static_analysis', False)).lower(),
@@ -67,17 +86,17 @@ def save_pipeline(content):
     with open(output_path, 'w') as f:
         f.write(content)
     
-    print(f"✅ Pipeline generated successfully at: {output_path}")
+    print(f"Pipeline generated successfully at: {output_path}")
 
 # Main flow
 def main():
     blueprint = load_blueprint()
 
     if blueprint:
-        print("✅ Blueprint detected: Generating pipeline from blueprint...")
+        print("Blueprint detected: Generating pipeline from blueprint...")
         technology = blueprint.get('technology', 'python')  # default to python if missing
     else:
-        print("⚠️ No blueprint found: Generating pipeline from default template...")
+        print("No blueprint found: Generating pipeline from default template...")
         technology = 'python'  # fallback template
 
     template_content = load_template(technology)

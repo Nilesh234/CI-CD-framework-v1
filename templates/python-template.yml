@@ -34,11 +34,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Deploy using DEPLOY_METHOD
-      run: |
-        if [[ "DEPLOY_METHOD" == "sam" ]]; then
-          sam build && sam deploy --no-confirm-changeset
-        elif [[ "DEPLOY_METHOD" == "cdk" ]]; then
-          cdk deploy --require-approval never
-        elif [[ "DEPLOY_METHOD" == "cloudformation" ]]; then
-          aws cloudformation deploy --template-file template.yaml --stack-name my-stack
-        fi
+      run: DEPLOY_COMMANDS
