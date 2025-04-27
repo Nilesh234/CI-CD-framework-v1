@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write  # allow workflow to push code changes
+  contents: write
 
 jobs:
   generate-and-push:
@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Set up Git User
         run: |
@@ -41,5 +43,5 @@ jobs:
           git add -f .github/workflows/generated-pipeline.yml
           git diff --cached --quiet && echo "No changes to commit" || (
             git commit -m "Generated pipeline from blueprint"
-            git push https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/${{ github.repository }} main
+            git push origin main
           )
