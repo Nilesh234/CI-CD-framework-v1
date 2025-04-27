@@ -1,0 +1,48 @@
+name: PROJECT_NAME - Java CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      BRANCHES_PLACEHOLDER
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Build with Maven
+      run: mvn clean install
+
+  unit_tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run Tests
+      run: mvn test
+
+  package_artifact:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Package Jar
+      run: mvn package
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: package_artifact
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy using DEPLOY_METHOD
+      run: |
+        if [[ "DEPLOY_METHOD" == "cdk" ]]; then
+          cdk deploy --require-approval never
+        elif [[ "DEPLOY_METHOD" == "cloudformation" ]]; then
+          aws cloudformation deploy --template-file template.yaml --stack-name java-stack
+        fi

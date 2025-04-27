@@ -1,0 +1,47 @@
+name: PROJECT_NAME - C++ CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      BRANCHES_PLACEHOLDER
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get install build-essential cmake
+    - name: Build Project
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+
+  unit_tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run C++ Tests
+      run: ./build/runTests
+
+  package_artifact:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Package Build
+      run: tar -czf artifact.tar.gz build/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: package_artifact
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy using DEPLOY_METHOD
+      run: |
+        if [[ "DEPLOY_METHOD" == "cloudformation" ]]; then
+          aws cloudformation deploy --template-file template.yaml --stack-name cpp-stack
+        fi

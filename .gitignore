@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Build
+build/
+dist/
+
+# Node
+node_modules/
+
+# GitHub Actions
+.github/workflows/generated-pipeline.yml
