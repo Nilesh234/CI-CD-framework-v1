@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/**'  # Ignore changes to workflows
+      - 'generated_pipelines/**'  # Ignore generated pipeline files
 
 permissions:
   contents: write
@@ -42,8 +45,16 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          git add -f generated_pipelines/*.yml
-          git diff --cached --quiet && echo "No changes to commit" || (
-            git commit -m "Generated pipeline from blueprint"
-            git push origin main
-          )
+          # Check if any generated pipeline files exist in the generated_pipelines folder
+          GENERATED_PIPELINES=$(find generated_pipelines -type f -name "*.yml")
+          
+          if [ -n "$GENERATED_PIPELINES" ]; then
+            # Add all generated pipeline files to git
+            git add generated_pipelines/*.yml
+            git diff --cached --quiet && echo "No changes to commit" || (
+              git commit -m "Generated pipeline from blueprint"
+              git push origin main
+            )
+          else
+            echo "No generated pipeline files found, skipping commit."
+          fi
