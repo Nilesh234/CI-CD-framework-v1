@@ -1,4 +1,4 @@
-name: Generate and Push Pipeline
+name: Generate Pipeline
 
 on:
   push:
